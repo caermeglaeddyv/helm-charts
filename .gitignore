@@ -1,0 +1,8 @@
+**/charts/
+**/secrets/
+**/Chart.lock
+!*.secret
+.gitsecret/keys/random_seed
+redis-ha/secret-values.yaml
+postgresql/
+taiga/
