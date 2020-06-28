@@ -23,10 +23,12 @@ spec:
       labels:
         {{- include "redis-ha.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.psp.enabled }}
       securityContext:
         runAsUser: {{ .Values.psp.runAsUser }}
         runAsGroup: {{ .Values.psp.runAsGroup }}
         fsGroup: {{ .Values.psp.fsGroup }}
+      {{- end }}
       {{- if ne .Values.storage.type "local" }}
       affinity:
         podAntiAffinity:
@@ -43,7 +45,9 @@ spec:
                   {{- include "redis-ha.selectorLabels" . | nindent 18 }}
               topologyKey: kubernetes.io/hostname
       {{- end }}
+      {{- if and .Values.rbac.enabled .Values.serviceAccount.create }}
       serviceAccountName: {{ include "redis-ha.serviceAccountName" . }}
+      {{- end }}
       containers:
       - name: redis
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
