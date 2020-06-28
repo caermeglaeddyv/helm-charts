@@ -38,11 +38,6 @@ service:
   redisExporter:
     port: 9121
 
-imagePullSecrets:
-  existing: false
-  names:
-  - ""
-
 image:
   repository: redis
   tag: 5.0.6-alpine
