@@ -1,0 +1,11 @@
+apiVersion: v2
+name: redis-ha
+description: Highly available Kubernetes implementation of Redis&Sentinel
+type: application
+kubeVersion: ">=1.14.1"
+version: 0.1.0
+sources:
+- https://github.com/helm/charts/tree/master/stable/redis-ha
+maintainers:
+- name: Ilham Alizada
+  email: ilham.alizada@hotmail.com

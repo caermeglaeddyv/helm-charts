@@ -1,0 +1,28 @@
+{{- if eq .Values.storage.type "local" -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: local-{{ .Release.Namespace }}-{{ include "redis-ha.fullname" . }}-server-data0
+  labels:
+    {{- include "redis-ha.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.storage.size }}
+  accessModes:
+  - ReadWriteOnce
+  persistentVolumeReclaimPolicy: {{ .Values.storage.reclaimPolicy }}
+  local:
+    path: {{ .Values.storage.path }}0/
+  volumeMode: Filesystem
+  claimRef:
+    namespace: {{ .Release.Namespace }}
+    name: data-{{ include "redis-ha.fullname" . }}-server-0
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - {{ .Values.storage.local.node }}
+{{- end -}}

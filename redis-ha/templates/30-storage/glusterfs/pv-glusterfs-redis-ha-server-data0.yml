@@ -1,0 +1,22 @@
+{{- if eq .Values.storage.type "glusterfs" -}}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: glusterfs-{{ .Release.Namespace }}-{{ include "redis-ha.fullname" . }}-server-data0
+  labels:
+    {{- include "redis-ha.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.storage.size }}
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: {{ .Values.storage.reclaimPolicy }}
+  glusterfs:
+    endpoints: {{ include "redis-ha.fullname" . }}-glusterfs-cluster
+    path: {{ .Values.storage.pathPrefix }}-0/
+    readOnly: {{ .Values.storage.readOnly }}
+  volumeMode: Filesystem
+  claimRef:
+    namespace: {{ .Release.Namespace }}
+    name: data-{{ include "redis-ha.fullname" . }}-server-0
+{{- end -}}

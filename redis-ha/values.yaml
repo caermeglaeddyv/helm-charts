@@ -1,0 +1,102 @@
+
+nameOverride: ""
+fullnameOverride: ""
+
+ingress:
+  create: false
+
+rbac:
+  enabled: true
+
+psp:
+  enabled: false
+  runAsUser: 
+  runAsGroup: 
+  fsGroup: 
+
+serviceAccount:
+  create: true
+  name: redis-ha
+
+storage:
+  type: ""
+  size: ""
+  pathPrefix: ""
+  readOnly: false
+  local:
+    node: ""
+  glusterfs:
+    servers:
+    - []
+  reclaimPolicy: Retain
+
+service:
+  redis:
+    port: 6379
+  sentinel:
+    port: 26379
+  redisExporter:
+    port: 9121
+
+imagePullSecrets:
+  existing: false
+  names:
+  - ""
+
+image:
+  repository: redis
+  tag: 5.0.6-alpine
+  pullPolicy: Always
+
+redis:
+  conf:
+    save: 900 1
+    appendonly:
+      enabled: "no"
+      appendfsync: always
+      autoAOFRewritePercentage: 75
+      autoAOFRewriteMinSize: 200mb
+  livenessProbe:
+    exec:
+      command: [ "sh", "/probes/liveness.sh", "6379" ]
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  readinessProbe:
+    exec:
+      command: [ "sh", "/probes/readiness.sh", "6379" ]
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  resources: {}
+
+redisPassword: ""
+
+sentinel:
+  masterGroup: ""
+  livenessProbe:
+    exec:
+      command:
+      - sh
+      - /probes/readiness.sh
+      - "26379"
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  readinessProbe:
+    exec:
+      command: [ "sh", "/probes/readiness.sh", "26379" ]
+    initialDelaySeconds: 15
+    periodSeconds: 5
+  resources: {}
+
+redisExporter:
+  image:
+    repository: oliver006/redis_exporter:v1.3.4-alpine
+    pullPolicy: Always
+  livenessProbe:
+    httpGet:
+      path: /metrics
+      port: 9121
+    initialDelaySeconds: 15
+    timeoutSeconds: 1
+    periodSeconds: 15
+
+tolerations: []

@@ -1,0 +1,177 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "redis-ha.fullname" . }}-server
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "redis-ha.labels" . | nindent 4 }}
+spec:
+  replicas: 3
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "redis-ha.selectorLabels" . | nindent 6 }}
+  serviceName: {{ include "redis-ha.fullname" . }}
+  podManagementPolicy: OrderedReady
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "9121"
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+      labels:
+        {{- include "redis-ha.selectorLabels" . | nindent 8 }}
+    spec:
+      securityContext:
+        runAsUser: {{ .Values.psp.runAsUser }}
+        runAsGroup: {{ .Values.psp.runAsGroup }}
+        fsGroup: {{ .Values.psp.fsGroup }}
+      {{- if ne .Values.storage.type "local" }}
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchLabels:
+                {{- include "redis-ha.selectorLabels" . | nindent 16 }}
+            topologyKey: kubernetes.io/hostname
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  {{- include "redis-ha.selectorLabels" . | nindent 18 }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      serviceAccountName: {{ include "redis-ha.serviceAccountName" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range .Values.imagePullSecrets.names }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}
+      containers:
+      - name: redis
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - redis-server
+        args:
+        - /data/conf/redis.conf
+        env:
+        - name: AUTH
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "redis-ha.fullname" . }}
+              key: auth
+        readinessProbe:
+          {{- toYaml .Values.redis.readinessProbe | nindent 10 }}
+        livenessProbe:
+          {{- toYaml .Values.redis.livenessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.redis.resources | nindent 10 }}
+        ports:
+        - name: redis
+          containerPort: 6379
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        - mountPath: /probes
+          name: probes
+      - name: sentinel
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - redis-sentinel
+        args:
+        - /data/conf/sentinel.conf
+        env:
+        - name: AUTH
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "redis-ha.fullname" . }}
+              key: auth
+        readinessProbe:
+          {{- toYaml .Values.sentinel.readinessProbe | nindent 10 }}
+        livenessProbe:
+          {{- toYaml .Values.sentinel.livenessProbe | nindent 10 }}
+        resources:
+          {{- toYaml .Values.sentinel.resources | nindent 10 }}
+        ports:
+        - name: sentinel
+          containerPort: 26379
+        volumeMounts:
+        - mountPath: /data
+          name: data
+        - mountPath: /probes
+          name: probes
+      - name: redis-exporter
+        image: {{ .Values.redisExporter.image.repository }}
+        imagePullPolicy: {{ .Values.redisExporter.image.pullPolicy }}
+        env:
+        - name: REDIS_ADDR
+          value: redis://127.0.0.1:6379
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "redis-ha.fullname" . }}
+              key: auth
+        livenessProbe:
+          {{- toYaml .Values.redisExporter.livenessProbe | nindent 10 }}
+        ports:
+        - name: exporter-port
+          containerPort: 9121
+      initContainers:
+      - name: {{ .Chart.Name }}-config-init
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        command:
+        - sh
+        args:
+        - /readonly-config/init.sh
+        env:
+        - name: SENTINEL_ID_0
+          value: e15229a06c5f0e9a4dd308152670a9e2242e728c
+        - name: SENTINEL_ID_1
+          value: 164afa3af0de56e73991db5663ba4f94e1475cad
+        - name: SENTINEL_ID_2
+          value: 5b68b03b989dc9bf5e9508182a452929c4b9a839
+        - name: AUTH
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "redis-ha.fullname" . }}
+              key: auth
+        volumeMounts:
+        - name: config
+          mountPath: /readonly-config
+          readOnly: true
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "redis-ha.fullname" . }}
+      - name: probes
+        configMap:
+          name: {{ include "redis-ha.fullname" . }}-probes
+      {{- if and .Values.persistence ( eq .Values.storage.type "local" ) }}
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.storage.local.node }}
+      {{- end }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+        {{- include "redis-ha.selectorLabels" . | nindent 8 }}
+    spec:
+      accessModes:
+      {{- if eq .Values.storage.type "glusterfs" }}
+      - ReadWriteMany
+      {{- else }}
+      - ReadWriteOnce
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.storage.size }}

@@ -1,0 +1,43 @@
+{{- if and .Values.rbac.enabled .Values.psp.enabled -}}
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: {{ include "redis-ha.fullname" . }}
+  labels:
+    {{- include "redis-ha.labels" . | nindent 4 }}
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: docker/default
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: docker/default
+spec:
+  allowPrivilegeEscalation: false
+  forbiddenSysctls:
+  - '*'
+  requiredDropCapabilities:
+  - ALL
+  seLinux:
+    rule: RunAsAny
+  runAsUser:
+    rule: MustRunAs
+    ranges:
+    - max: {{ .Values.psp.runAsUser }}
+      min: {{ .Values.psp.runAsUser }}
+  runAsGroup:
+    rule: MustRunAs
+    ranges:
+    - max: {{ .Values.psp.runAsGroup }}
+      min: {{ .Values.psp.runAsGroup }}
+  supplementalGroups:
+    rule: MustRunAs
+    ranges:
+    - max: {{ .Values.psp.runAsGroup }}
+      min: {{ .Values.psp.runAsGroup }}
+  fsGroup:
+    rule: MustRunAs
+    ranges:
+    - max: {{ .Values.psp.fsGroup }}
+      min: {{ .Values.psp.fsGroup }}
+  volumes:
+  - configMap
+  - secret
+  - persistentVolumeClaim
+{{- end -}}

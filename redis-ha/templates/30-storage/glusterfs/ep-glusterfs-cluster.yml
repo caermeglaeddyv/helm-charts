@@ -1,0 +1,16 @@
+{{- if eq .Values.storage.type "glusterfs" -}}
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: {{ include "redis-ha.fullname" . }}-glusterfs-cluster
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{ include "redis-ha.labels" . | nindent 4}}
+subsets:
+{{- range .Values.storage.glusterfs.servers }}
+- addresses:
+  - ip: {{ . }}
+  ports:
+  - port: 1
+{{- end }}
+{{- end -}}
