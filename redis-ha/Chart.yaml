@@ -2,7 +2,7 @@ apiVersion: v2
 name: redis-ha
 description: Highly available Kubernetes implementation of Redis&Sentinel
 type: application
-kubeVersion: ">=1.14.1"
+kubeVersion: ">=1.14.1 || v1.14.10-gke.36"
 version: 0.1.0
 sources:
 - https://github.com/helm/charts/tree/master/stable/redis-ha

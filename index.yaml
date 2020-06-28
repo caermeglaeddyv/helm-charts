@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   redis-ha:
   - apiVersion: v2
-    created: "2020-06-28T21:51:47.72887745+04:00"
+    created: "2020-06-28T22:11:26.879622144+04:00"
     description: Highly available Kubernetes implementation of Redis&Sentinel
-    digest: 2d7e24787008f080b5be2f57d93aab2e1f6481f865e5b9e9e46733d00e75d6f9
-    kubeVersion: '>=1.14.1'
+    digest: b87a595d1ed1bc807e057dea6101451712700241b601f0fcdaeec2bdbab7b05d
+    kubeVersion: '>=1.14.1 || v1.14.10-gke.36'
     maintainers:
     - email: ilham.alizada@hotmail.com
       name: Ilham Alizada
@@ -16,4 +16,4 @@ entries:
     urls:
     - redis-ha-0.1.0.tgz
     version: 0.1.0
-generated: "2020-06-28T21:51:47.725563495+04:00"
+generated: "2020-06-28T22:11:26.878799532+04:00"
