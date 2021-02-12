@@ -1,19 +1,4 @@
-apiVersion: v1
-entries:
-  redis-ha:
-  - apiVersion: v2
-    created: "2020-06-28T22:11:26.879622144+04:00"
-    description: Highly available Kubernetes implementation of Redis&Sentinel
-    digest: b87a595d1ed1bc807e057dea6101451712700241b601f0fcdaeec2bdbab7b05d
-    kubeVersion: '>=1.14.1 || v1.14.10-gke.36'
-    maintainers:
-    - email: ilham.alizada@hotmail.com
-      name: Ilham Alizada
-    name: redis-ha
-    sources:
-    - https://github.com/helm/charts/tree/master/stable/redis-ha
-    type: application
-    urls:
-    - redis-ha-0.1.0.tgz
-    version: 0.1.0
-generated: "2020-06-28T22:11:26.878799532+04:00"
+repositoryID: caermeglaeddyv
+owners:
+- email: ilham.alizada@hotmail.com
+  name: Ilham Alizada
